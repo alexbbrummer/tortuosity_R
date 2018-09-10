@@ -1,17 +1,18 @@
-single_vessel_plotter <- function(vessel_coords, centered = TRUE, frenet = FALSE, scale = 1, frenet_vectors, col_metric = NULL, ...){
+single_vessel_plotter <- function(vessel_coords, centered = TRUE, frenet = FALSE, scale = 1, frenet_vectors, col_metric = NULL, col = NULL, ...){
   ## This function will plot vessel coordinates, whether they are source voxels or smoothed and interpolated coordinates.  The parameter center is needed if one wants to also plot the Frenet vectors in order to keep the vectors each at unit length.  The frenet parameter toggles whether or not the Frenet vectors are calculated and subsequently plotted.  The scale parameter is a multiplying factor for rescaling the Frenet vectors in case they are too large or small for viewing.  The frenet_vectors parameter determines the vessel coordinates at which to plot the Frenet vectors.  This object needs to be a vector that will be used to index the Frenet vectors calculated.  The col_metric parameter is used for color coding the vessels based on the values provided in col_metric.  col_metric needs to be a numeric vector with length equal to the number of rows in vessel_coords.  Examples for color coding are curvature and torsion.
-  library(rgl)
+  library("rgl")
+  library("pracma")
   
   # Centered = TRUE performs a subroutine for centering the graph.  This is helpful if plotting the Frenet vectors for keeping them all of unit-length.
   if(centered){
-    mean_x <- mean(vessel_coords[,1], na.rm = T)
-    mean_y <- mean(vessel_coords[,2], na.rm = T)
-    mean_z <- mean(vessel_coords[,3], na.rm = T)
+    tran_x <- 0.5*sum(range(vessel_coords[,1]))
+    tran_y <- 0.5*sum(range(vessel_coords[,2]))
+    tran_z <- 0.5*sum(range(vessel_coords[,3]))
     
-    mean_vec <- c(mean_x, mean_y, mean_z)
+    tran_vec <- c(tran_x, tran_y, tran_z)
     
     for(i in 1:nrow(vessel_coords)){
-      vessel_coords[i,] <- vessel_coords[i,] - mean_vec
+      vessel_coords[i,] <- vessel_coords[i,] - tran_vec
     }
   }
   
@@ -27,8 +28,10 @@ single_vessel_plotter <- function(vessel_coords, centered = TRUE, frenet = FALSE
     colors <- colorRampPalette(brewer.pal(20, "Spectral"))
     colors_key <- as.numeric(cut(col_metric, 20))
     col <- colors(20)[colors_key]
-  }else{
+  }else if(is.null(col)){
     col <- "black"
+  }else{
+    col <- col
   }
   
   ## Here is the call to plot only the vessel without Frenet vectors.
@@ -46,10 +49,10 @@ single_vessel_plotter <- function(vessel_coords, centered = TRUE, frenet = FALSE
     normal_array[,] <- NaN
     binormal_array[,] <- NaN
     
-    for(i in 1:(nrow(vessel_coords) - 2)){
-      tangent_array[i+1,] <- tangent_vector(vessel_coords[i,], vessel_coords[i+1,], vessel_coords[i+2,])
-      normal_array[i+1,] <- normal_vector(vessel_coords[i,], vessel_coords[i+1,], vessel_coords[i+2,])
-      binormal_array[i+1,] <- binormal_vector(vessel_coords[i,], vessel_coords[i+1,], vessel_coords[i+2,])
+    for(i in 3:(length(vessel_coords[,1]) - 2)){
+      tangent_array[i,] <- tangent_vector(vessel_coords[i-2,], vessel_coords[i-1,], vessel_coords[i,], vessel_coords[i+1,], vessel_coords[i+2,])
+      normal_array[i,] <- normal_vector(vessel_coords[i-2,], vessel_coords[i-1,], vessel_coords[i,], vessel_coords[i+1,], vessel_coords[i+2,])
+      binormal_array[i,] <- binormal_vector(vessel_coords[i-2,], vessel_coords[i-1,], vessel_coords[i,], vessel_coords[i+1,], vessel_coords[i+2,])
     }
     
     plot3d(vessel_coords[,1], vessel_coords[,2], vessel_coords[,3], xlim = c(-bbox_range, bbox_range), ylim = c(-bbox_range, bbox_range), zlim = c(-bbox_range, bbox_range), col = col, ...)

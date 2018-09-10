@@ -1,11 +1,11 @@
-curve_torse_check_plotter <- function(vessel_coords, plot_type = 1, save_plot = FALSE){
+curve_torse_check_plotter <- function(vessel_coords, plot_type = 1, filter_torsion_spikes = TRUE, save_plot = FALSE){
   ## This function serves as an example for plotting curvature/torsion versus normalized arclenth, curvature/curvature-error versus normalized arclength, and torsion/torsion-error versus normalized arclength.
   
   source("./tortuosity_metrics.R")
   source("./frenet_vectors.R")
   
   
-  tortuosity_metrics <- curvature_torsion_calculator(tangent = vessel_coords[[1]], normal = vessel_coords[[2]], binormal = vessel_coords[[3]], vessel_coords = vessel_coords[[4]])
+  tortuosity_metrics <- curvature_torsion_calculator(tangent = vessel_coords[[1]], normal = vessel_coords[[2]], binormal = vessel_coords[[3]], vessel_coords = vessel_coords[[4]], filter_torsion_spikes = filter_torsion_spikes)
   
   
   ## Plotting curvature and torsion in one graph

@@ -4,28 +4,38 @@
 
 library("pracma")
 
-tangent_vector <- function(pt1, pt2, pt3){
+tangent_vector <- function(pt1, pt2, pt3, pt4, pt5){
   ## This function calculates the unit tangent vector of pt2.  The idea is to calculate the velocity vectory, then normalize by it's length.  That is, T = V/|V|. This can be done both directly, and by using the velocity vectory function.  We will write both, but comment out that which uses the functions.
-  v <- pt3 - pt1
+  
+  ## Originally a three-point centered difference method was used which is accurate up to the third derivative.
+  # v <- pt3 - pt1
+  ## We will instead use a five point centered difference method that is accurate up to the fifth derivative.
+  
+  v <- -0.25*pt1 - 2*pt2 + 2*pt4 + 0.25*pt5 
   mag_v <- sqrt(sum(v*v))
   t <- v/mag_v
   return(t)
 }
 
-normal_vector <- function(pt1, pt2, pt3){
+normal_vector <- function(pt1, pt2, pt3, pt4, pt5){
   ## This function calculates the unit normal vector of pt2.  To do so, we will need both the velocity and acceleration vectors.  The formula for the unit normal vector is N = V X (A X V) / |V X (A X V)|.  Note that Bullitt et al. is regrettably vague about the order of operations of V X A X V, and it must either be determined from the provided Figure, or by looking up the definition elsewhere.  As usual, we can calculate either directly, or call upon previously defined functions.  We will write both, but comment out that which uses the functions.
-  v <- pt3 - pt1
-  a <- pt3 - 2*pt2 + pt1
+  
+  ## Originally three-point centered difference methods were used which are accurate up to the third derivative and fourth derivatives.
+  # v <- pt3 - pt1
+  # a <- pt3 - 2*pt2 + pt1
+  ## We will instead use five point centered difference methods that are accurate up to the fifth and sixth derivatives.
+  v <- -0.25*pt1 - 2*pt2 + 2*pt4 + 0.25*pt5 
+  a <- -(1/12)*pt1 + (4/3)*pt2 - (5/2)*pt3 + (4/3)*pt4 - (1/12)*pt5
   n <- cross(v, cross(a, v))
   mag_n <- sqrt(sum(n*n))
   N <- n/mag_n
   return(N)
 }
 
-binormal_vector <- function(pt1, pt2, pt3){
+binormal_vector <- function(pt1, pt2, pt3, pt4, pt5){
   ## This function calculates the unit binormal vector of pt2.  To do so, we will need the unit tangent and unit normal vectors.  The formula for the unit binormal vector is B = T X N.  As the unit tangent and normal vectors should already be properly normalized, we need not normalize this vector after calculation of it's direction.
-  t <- tangent_vector(pt1, pt2, pt3)
-  n <- normal_vector(pt1, pt2, pt3)
+  t <- tangent_vector(pt1, pt2, pt3, pt4, pt5)
+  n <- normal_vector(pt1, pt2, pt3, pt4, pt5)
   B <- cross(t, n)
   return(B)
 }
@@ -49,10 +59,10 @@ frenet_frame_calc <- function(vessel_coords){
   normal_array[,] <- NaN
   binormal_array[,] <- NaN
   
-  for(i in 1:(nrow(vessel_coords) - 2)){
-    tangent_array[i+1,] <- tangent_vector(vessel_coords[i,], vessel_coords[i+1,], vessel_coords[i+2,])
-    normal_array[i+1,] <- normal_vector(vessel_coords[i,], vessel_coords[i+1,], vessel_coords[i+2,])
-    binormal_array[i+1,] <- binormal_vector(vessel_coords[i,], vessel_coords[i+1,], vessel_coords[i+2,])
+  for(i in 3:(length(vessel_coords[,1]) - 2)){
+    tangent_array[i,] <- tangent_vector(vessel_coords[i-2,], vessel_coords[i-1,], vessel_coords[i,], vessel_coords[i+1,], vessel_coords[i+2,])
+    normal_array[i,] <- normal_vector(vessel_coords[i-2,], vessel_coords[i-1,], vessel_coords[i,], vessel_coords[i+1,], vessel_coords[i+2,])
+    binormal_array[i,] <- binormal_vector(vessel_coords[i-2,], vessel_coords[i-1,], vessel_coords[i,], vessel_coords[i+1,], vessel_coords[i+2,])
   }
   
   frenet_array <- cbind(tangent_array, normal_array, binormal_array)
